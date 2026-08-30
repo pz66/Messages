@@ -82,19 +82,24 @@ class SmsReceiver : BroadcastReceiver() {
                 val threadId = appContext.getThreadId(address)
                 val subscriptionId = intent.getIntExtra("subscription", -1)
 
-                // =========自动复制验证码 + Toast弹窗=========
-                val code = CodeExtractor.extractVerificationCode(body)
-                if (!code.isNullOrBlank()) {
-                    Handler(Looper.getMainLooper()).post {
-                        //复制到剪贴板
-                        val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        val clip = ClipData.newPlainText("verification_code", code)
-                        clipboard.setPrimaryClip(clip)
-                        //弹出Toast
-                        Toast.makeText(appContext, "已复制验证码：$code", Toast.LENGTH_SHORT).show()
+                val prefs = appContext.getSharedPreferences("messages_custom_prefs", Context.MODE_PRIVATE)
+                val enableAutoCopy = prefs.getBoolean("auto_copy_verification_code", false)
+
+                if (enableAutoCopy) {
+                    // =========自动复制验证码 + Toast弹窗=========
+                    val code = CodeExtractor.extractVerificationCode(body)
+                    if (!code.isNullOrBlank()) {
+                        Handler(Looper.getMainLooper()).post {
+                            //复制到剪贴板
+                            val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clip = ClipData.newPlainText("verification_code", code)
+                            clipboard.setPrimaryClip(clip)
+                            //弹出Toast
+                            Toast.makeText(appContext, "已复制验证码：$code", Toast.LENGTH_SHORT).show()
+                        }
                     }
+                    // ===========================================
                 }
-                // ===========================================
 
                 handleMessageSync(
                     context = appContext,

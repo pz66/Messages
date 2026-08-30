@@ -235,6 +235,29 @@
                 layout="@layout/divider" />
 
             <TextView
+                android:id="@+id/settings_copy_code_label"
+                style="@style/SettingsSectionLabelStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/auto_copy_verification_code" />
+
+            <RelativeLayout
+                android:id="@+id/settings_auto_copy_code_holder"
+                style="@style/SettingsHolderSwitchStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/settings_auto_copy_code"
+                    style="@style/SettingsSwitchStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/auto_copy_verification_code_desc" />
+            </RelativeLayout>
+            <include
+                android:id="@+id/settings_copy_code_divider"
+                layout="@layout/divider" />
+
+            <TextView
                 android:id="@+id/settings_outgoing_messages_label"
                 style="@style/SettingsSectionLabelStyle"
                 android:layout_width="match_parent"

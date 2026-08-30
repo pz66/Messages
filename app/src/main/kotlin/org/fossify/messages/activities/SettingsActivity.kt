@@ -122,6 +122,7 @@ class SettingsActivity : SimpleActivity() {
         setupAppPasswordProtection()
         setupMessagesExport()
         setupMessagesImport()
+        setupAutoCopyCode() //新增这一行
         updateTextColors(binding.settingsNestedScrollview)
 
         if (
@@ -468,4 +469,17 @@ class SettingsActivity : SimpleActivity() {
             else -> R.string.mms_file_size_limit_none
         }
     )
+    private fun setupAutoCopyCode() = binding.apply {
+        val prefs = getSharedPreferences("messages_custom_prefs", MODE_PRIVATE)
+        settingsAutoCopyCode.text = getString(R.string.auto_copy_verification_code)
+        settingsAutoCopyCode.isChecked = prefs.getBoolean("auto_copy_verification_code", false)
+
+        settingsAutoCopyCodeHolder.setOnClickListener {
+            settingsAutoCopyCode.toggle()
+            val isChecked = settingsAutoCopyCode.isChecked
+            prefs.edit()
+                .putBoolean("auto_copy_verification_code", isChecked)
+                .apply()
+        }
+    }
 }
