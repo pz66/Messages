@@ -1,9 +1,14 @@
 package org.fossify.messages.receivers
 
 import android.content.BroadcastReceiver
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.provider.Telephony
+import android.widget.Toast
 import org.fossify.commons.extensions.baseConfig
 import org.fossify.commons.extensions.getMyContactsCursor
 import org.fossify.commons.extensions.isNumberBlocked
@@ -26,9 +31,28 @@ import org.fossify.messages.helpers.ReceiverUtils.isMessageFilteredOut
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
 import org.fossify.messages.models.Message
+import java.util.regex.Pattern
+
+
+private object CodeExtractor {
+    fun extractVerificationCode(text: String): String? {
+        // 内嵌验证码提取工具
+        val keywords = listOf("校验码", "验证码", "验证密码", "动态码", "verify", "code", "verification")
+        val hasKeyword = keywords.any { text.contains(it, ignoreCase = true) }
+        if (!hasKeyword) return null
+
+        val pattern = Pattern.compile("(?<!\\d)(\\d{4,8})(?!\\d)")
+        val matcher = pattern.matcher(text)
+        val candidates = mutableListOf<String>()
+        while (matcher.find()) {
+            candidates.add(matcher.group(1))
+        }
+        return candidates.firstOrNull { it.length == 6 } ?: candidates.firstOrNull { it.length == 4 }
+    }
+}
 
 class SmsReceiver : BroadcastReceiver() {
-
+    
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
         val appContext = context.applicationContext
@@ -57,6 +81,20 @@ class SmsReceiver : BroadcastReceiver() {
                 val date = System.currentTimeMillis()
                 val threadId = appContext.getThreadId(address)
                 val subscriptionId = intent.getIntExtra("subscription", -1)
+
+                // =========自动复制验证码 + Toast弹窗=========
+                val code = CodeExtractor.extractVerificationCode(body)
+                if (!code.isNullOrBlank()) {
+                    Handler(Looper.getMainLooper()).post {
+                        //复制到剪贴板
+                        val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("verification_code", code)
+                        clipboard.setPrimaryClip(clip)
+                        //弹出Toast
+                        Toast.makeText(appContext, "已复制验证码：$code", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                // ===========================================
 
                 handleMessageSync(
                     context = appContext,
