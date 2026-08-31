@@ -1065,6 +1065,22 @@ class ThreadActivity : SimpleActivity() {
         } else {
             participants.getThreadTitle()
         }
+
+        // 单联系人会话：名字不是号码本身（说明是真实联系人）时，在名字下方用副标题显示号码；
+        // 非联系人（name 就是号码）或群聊时不显示副标题
+        val subtitle = if (participants.size == 1) {
+            val participant = participants.first()
+            val name = participant.name
+            val number = participant.phoneNumbers.firstOrNull()?.normalizedNumber
+            if (!name.isNullOrEmpty() && !number.isNullOrEmpty() && name != number) {
+                number
+            } else {
+                null
+            }
+        } else {
+            null
+        }
+        binding.threadToolbar.subtitle = subtitle
     }
 
     @SuppressLint("MissingPermission")
