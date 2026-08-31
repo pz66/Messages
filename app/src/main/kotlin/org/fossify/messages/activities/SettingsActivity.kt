@@ -471,7 +471,7 @@ class SettingsActivity : SimpleActivity() {
     )
     private fun setupAutoCopyCode() = binding.apply {
         val prefs = getSharedPreferences("messages_custom_prefs", MODE_PRIVATE)
-        settingsAutoCopyCode.text = getString(R.string.auto_copy_verification_code)
+        settingsAutoCopyCode.text = getString(R.string.auto_copy_verification_code_desc)
         settingsAutoCopyCode.isChecked = prefs.getBoolean("auto_copy_verification_code", false)
 
         settingsAutoCopyCodeHolder.setOnClickListener {
