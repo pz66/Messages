@@ -1,5 +1,7 @@
 package org.fossify.messages.adapters
 
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
@@ -370,6 +372,27 @@ class ThreadAdapter(
                 text = message.body
                 setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize)
                 beVisibleIf(message.body.isNotEmpty())
+
+                val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onDoubleTap(e: MotionEvent): Boolean {
+                        if (message.body.trim().isNotEmpty()) {
+                            SelectTextDialog(activity, message.body)
+                        }
+                        return true
+                    }
+
+                    override fun onSingleTapUp(e: MotionEvent): Boolean {
+                        return false
+                    }
+                })
+
+                setOnTouchListener(object : View.OnTouchListener {
+                    override fun onTouch(v: View?, event: MotionEvent): Boolean {
+                        gestureDetector.onTouchEvent(event)
+                        return false
+                    }
+                })
+
                 setOnLongClickListener {
                     holder.viewLongClicked()
                     true
