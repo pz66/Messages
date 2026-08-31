@@ -17,7 +17,7 @@ import org.fossify.commons.extensions.formatWithDeprecatedBadge
 import org.fossify.commons.extensions.getBlockedNumbers
 import org.fossify.commons.extensions.getFontSizeText
 import org.fossify.commons.extensions.getProperPrimaryColor
-import org.fossify.commons.extensions.isOrWasThankYouInstalled
+// import org.fossify.commons.extensions.isOrWasThankYouInstalled
 import org.fossify.commons.extensions.toast
 import org.fossify.commons.extensions.updateTextColors
 import org.fossify.commons.extensions.viewBinding
@@ -202,11 +202,11 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun setupManageBlockedNumbers() = binding.apply {
-        settingsManageBlockedNumbers.text =
-            addLockedLabelIfNeeded(org.fossify.commons.R.string.manage_blocked_numbers)
+        // settingsManageBlockedNumbers.text =
+        //     addLockedLabelIfNeeded(org.fossify.commons.R.string.manage_blocked_numbers)
         settingsManageBlockedNumbersHolder.beVisible()
         settingsManageBlockedNumbersHolder.setOnClickListener {
-            if (isOrWasThankYouInstalled()) {
+            if (true) {
                 Intent(this@SettingsActivity, ManageBlockedNumbersActivity::class.java).apply {
                     startActivity(this)
                 }
@@ -217,11 +217,11 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun setupManageBlockedKeywords() = binding.apply {
-        settingsManageBlockedKeywords.text =
-            addLockedLabelIfNeeded(R.string.manage_blocked_keywords)
+        // settingsManageBlockedKeywords.text =
+        //  addLockedLabelIfNeeded(R.string.manage_blocked_keywords)
 
         settingsManageBlockedKeywordsHolder.setOnClickListener {
-            if (isOrWasThankYouInstalled()) {
+            if (true) {
                 Intent(this@SettingsActivity, ManageBlockedKeywordsActivity::class.java).apply {
                     startActivity(this)
                 }
