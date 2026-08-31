@@ -3,16 +3,23 @@ package org.fossify.messages.adapters
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.util.TypedValue
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.graphics.drawable.toDrawable
@@ -108,6 +115,20 @@ class ThreadAdapter(
         private const val MAX_MEDIA_HEIGHT_RATIO = 3
         private const val SIM_BITS = 21
         private const val SIM_MASK = (1L shl SIM_BITS) - 1
+
+        // 自研 URL 识别正则：覆盖带协议 / www. / 裸域名（含短链），并避免把版本号、小数、邮箱内的域名误判为链接。
+        // 系统自带的 Linkify WEB_URLS 无法识别无协议头的短链、会把尾部标点并入链接，故弃用 android:autoLink="web" 改用此正则。
+        // 起始边界用显式 ASCII 负向断言 (?! 前字符为 [A-Za-z0-9_.@/]) 而非 \b：因为 Java 的 \b 把中文字符也当“单词字符”，
+        // 会导致“详情见example.com”这类中文紧邻 URL 的场景无法识别。
+        private val URL_REGEX = Regex(
+            """(?i)(?<![A-Za-z0-9_.@/])(?:(?:https?|ftp)://[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+|www\.[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?)*(?::\d{1,5})?(?:/[/A-Za-z0-9\-._~:@%!$&'()*+,;=?&#\[\]]*)?|[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}(?::\d{1,5})?(?:/[/A-Za-z0-9\-._~:@%!$&'()*+,;=?&#\[\]]*)?)"""
+        )
+
+        // URL 允许以这些字符结尾（多半是中文/英文标点被顺带匹配进来），需要从链接尾部剔除
+        private val URL_TRAILING_PUNCTUATION = setOf(
+            '.', ',', ';', ':', '!', '?', ')', ']', '}', '\'', '"',
+            '。', '，', '；', '：', '！', '？', '）', '】', '》', '」', '』', '’', '“', '”', '、'
+        )
     }
 
     init {
@@ -365,14 +386,77 @@ class ThreadAdapter(
         }
     }
 
+    private fun setMessageBodyWithLinks(body: TextView, text: String) {
+        if (text.isEmpty()) {
+            body.text = text
+            return
+        }
+        val spannable = SpannableString(text)
+        for (match in URL_REGEX.findAll(text)) {
+            val trimmed = trimUrlTrailingChars(match.value)
+            if (trimmed.isEmpty()) {
+                continue
+            }
+            val start = match.range.first
+            val end = start + trimmed.length
+            spannable.setSpan(
+                object : ClickableSpan() {
+                    override fun onClick(widget: View) {
+                        openUrl(trimmed)
+                    }
+                },
+                start,
+                end,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        body.text = spannable
+        body.movementMethod = LinkMovementMethod.getInstance()
+        body.highlightColor = Color.TRANSPARENT
+    }
+
+    private fun trimUrlTrailingChars(value: String): String {
+        var end = value.length
+        while (end > 0) {
+            val c = value[end - 1]
+            val shouldTrim = when {
+                // 右括号只有“多余”（即括号不配对）时才剔除，避免截断如 wiki/Foo_(bar) 这类链接
+                c == ')' -> value.substring(0, end).count { it == ')' } > value.substring(0, end).count { it == '(' }
+                c in URL_TRAILING_PUNCTUATION -> true
+                else -> false
+            }
+            if (!shouldTrim) {
+                break
+            }
+            end--
+        }
+        return value.substring(0, end)
+    }
+
+    private fun openUrl(url: String) {
+        val normalizedUrl = if (url.startsWith("http://", ignoreCase = true) ||
+            url.startsWith("https://", ignoreCase = true) ||
+            url.startsWith("ftp://", ignoreCase = true)
+        ) {
+            url
+        } else {
+            "https://$url"
+        }
+        try {
+            activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(normalizedUrl)))
+        } catch (e: ActivityNotFoundException) {
+            activity.showErrorToast(activity.getString(org.fossify.commons.R.string.no_app_found))
+        }
+    }
+
     private fun setupView(holder: ViewHolder, view: View, message: Message) {
         ItemMessageBinding.bind(view).apply {
             threadMessageHolder.isSelected = selectedKeys.contains(message.getSelectionKey())
             threadMessageBody.apply {
-                text = message.body
+                setMessageBodyWithLinks(this, message.body)
                 setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize)
                 beVisibleIf(message.body.isNotEmpty())
-
+                
                 val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
                     override fun onDoubleTap(e: MotionEvent): Boolean {
                         if (message.body.trim().isNotEmpty()) {
