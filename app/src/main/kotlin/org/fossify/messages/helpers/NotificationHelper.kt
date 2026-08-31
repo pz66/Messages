@@ -253,7 +253,7 @@ class NotificationHelper(private val context: Context) {
         name: String?
     ): NotificationCompat.MessagingStyle {
         // 收短信可以在名字后面显示号码
-        val name_address = if (name != null) {
+        val name_address = if (name != address) {
             "$name ($address)"
         } else {
             address
