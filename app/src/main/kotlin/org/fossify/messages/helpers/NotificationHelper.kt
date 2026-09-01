@@ -125,11 +125,18 @@ class NotificationHelper(private val context: Context) {
         } else {
             null
         }
+        val name_address = if (sender != address) {
+            "$sender ($address)"
+        } else {
+            address
+        }
         val builder = NotificationCompat.Builder(context, notificationChannelId).apply {
             when (context.config.lockScreenVisibilitySetting) {
                 LOCK_SCREEN_SENDER_MESSAGE -> {
                     setLargeIcon(largeIcon)
-                    setStyle(getMessagesStyle(address, body, notificationId, sender))
+                    setContentTitle(name_address)
+                    setContentText(body)
+                    setStyle(NotificationCompat.BigTextStyle ().bigText (body))
                 }
 
                 LOCK_SCREEN_SENDER -> {
