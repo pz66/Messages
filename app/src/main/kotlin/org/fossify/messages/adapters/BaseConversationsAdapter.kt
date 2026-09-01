@@ -155,8 +155,13 @@ abstract class BaseConversationsAdapter(
             conversationFrame.isSelected = selectedKeys.contains(conversation.hashCode())
 
             conversationAddress.apply {
-                text = conversation.title
-                setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize * 1.2f)
+                val displayText = if (!conversation.title.isNullOrBlank() && conversation.title != conversation.phoneNumber) {
+                    "${conversation.title}(${conversation.phoneNumber})"
+                } else {
+                    conversation.title
+                }
+                text = displayText
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize * 1)
             }
 
             conversationBodyShort.apply {

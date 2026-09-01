@@ -703,7 +703,8 @@ fun Context.getThreadContactNames(
         } else {
             val privateContact = privateContacts.firstOrNull { it.doesHavePhoneNumber(number) }
             if (privateContact == null) {
-                names.add(name)
+                // 没匹配到联系人时，尝试识别为运营商 / 银行等服务号码
+                names.add(getServiceProviderName(number) ?: name)
             } else {
                 names.add(privateContact.name)
             }
@@ -787,10 +788,132 @@ fun Context.getSuggestedContacts(
     return contacts
 }
 
+// 运营商 / 银行等常见服务号码 → 显示名称（个人常用，可按需增删；键为纯数字形式的号码）
+val SERVICE_NUMBER_NAMES = mapOf(
+    // ==========运营商==========
+    "10086" to "中国移动",
+    "10085" to "中国移动营销",
+    "1008611" to "中国移动话费查询",
+    "12580" to "中国移动服务",
+    "10010" to "中国联通",
+    "10011" to "联通话费查询",
+    "10019" to "联通客服",
+    "10000" to "中国电信",
+    "10001" to "中国电信自助",
+    "10002" to "电信业务办理",
+
+    // ==========国有大行==========
+    "95588" to "工商银行",
+    "95599" to "农业银行",
+    "95566" to "中国银行",
+    "95533" to "建设银行",
+    "95516" to "中国银联",
+    "95540" to "邮储银行",
+
+    // ==========股份制商业银行==========
+    "95555" to "招商银行",
+    "95568" to "民生银行",
+    "95577" to "华夏银行",
+    "95595" to "光大银行",
+    "95558" to "中信银行",
+    "95559" to "交通银行",
+    "95528" to "浦发银行",
+    "95561" to "兴业银行",
+    "95501" to "广发银行",
+    "95508" to "广发银行",
+    "95579" to "平安银行",
+    "95587" to "浙商银行",
+    "95526" to "北京银行",
+    "95580" to "邮储银行",
+    "95537" to "恒丰银行",
+    "95552" to "华夏银行",
+
+    // ==========保险机构==========
+    "95511" to "中国平安",
+    "95519" to "中国人寿",
+    "95500" to "太平洋保险",
+    "95567" to "新华保险",
+    "95518" to "人保财险",
+    "95589" to "太平保险",
+    "95529" to "大地保险",
+    "95556" to "安邦保险",
+
+    // ==========政务公共服务==========
+    "12345" to "政务便民热线",
+    "12306" to "铁路12306",
+    "12315" to "市场监管12315",
+    "12366" to "税务服务",
+    "12320" to "卫生健康热线",
+    "12393" to "医保服务热线",
+    "12348" to "法律援助",
+    "12333" to "人社服务",
+    "12369" to "环保举报",
+    "12381" to "政务服务总热线",
+    "110" to "公安报警",
+    "119" to "火警",
+    "120" to "急救中心",
+    "122" to "交通事故报警",
+
+    // ==========快递物流==========
+    "95554" to "圆通速递",
+    "95311" to "中通快递",
+    "95320" to "申通快递",
+    "95338" to "顺丰速运",
+    "95323" to "韵达快递",
+    "95720" to "极兔速递",
+    "95353" to "德邦快递",
+    "95317" to "京东物流",
+    "95387" to "跨越速运",
+
+    // ==========互联网平台==========
+    "95187" to "支付宝",
+    "95017" to "微信支付",
+    "95152" to "抖音/字节跳动",
+    "95105888" to "淘宝天猫",
+    "95105789" to "京东",
+    "95102112" to "拼多多",
+    "952177" to "美团",
+    "952300" to "携程旅行",
+    "95105966" to "12306票务",
+    "95228" to "滴滴出行",
+    "95105600" to "阿里云",
+    "95252" to "B站哔哩哔哩",
+    "95105152" to "快手",
+
+    // ==========运营商增值/政务短号==========
+    "106980095588" to "工行短信",
+    "106980095533" to "建行短信",
+    "10690095555" to "招行短信",
+
+    //
+    "101906" to "联通助理",
+    "10658965" to "中国移动新通话",
+    "10658162688" to "移动云盘"
+)
+
+
+// 从号码识别运营商 / 银行等服务方名称；不是已知服务号码时返回 null
+fun getServiceProviderName(number: String): String? {
+    val digits = number.filter { it.isDigit() }
+    if (digits.isEmpty()) {
+        return null
+    }
+    // 兼容 +86 / 86 / 0086 前缀的写法
+    val candidates = listOf(
+        digits,
+        digits.removePrefix("0086"),
+        digits.removePrefix("86")
+    ).distinct()
+    for (candidate in candidates) {
+        SERVICE_NUMBER_NAMES[candidate]?.let { return it }
+    }
+    return null
+}
+
 fun Context.getNameAndPhotoFromPhoneNumber(number: String): NamePhoto {
     MessagingCache.namePhoto.get(number)?.let { return it }
     if (!hasPermission(PERMISSION_READ_CONTACTS)) {
-        return NamePhoto(number, null)
+        return NamePhoto(getServiceProviderName(number) ?: number, null)
     }
 
     val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
@@ -807,11 +930,11 @@ fun Context.getNameAndPhotoFromPhoneNumber(number: String): NamePhoto {
                 val photoUri = cursor.getStringValue(PhoneLookup.PHOTO_URI)
                 NamePhoto(name, photoUri)
             } else {
-                NamePhoto(number, null)
+                NamePhoto(getServiceProviderName(number) ?: number, null)
             }
         }
     } catch (_: Exception) {
-        NamePhoto(number, null)
+        NamePhoto(getServiceProviderName(number) ?: number, null)
     }
 
     MessagingCache.namePhoto.put(number, result)
@@ -1039,7 +1162,7 @@ fun Context.markThreadMessagesUnread(threadId: Long) {
         contentResolver.update(uri, contentValues, selection, selectionArgs)
     }
     conversationsDB.markUnread(threadId)
-} 
+}
 
 @SuppressLint("NewApi")
 fun Context.getThreadId(address: String): Long {

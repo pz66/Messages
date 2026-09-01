@@ -131,6 +131,7 @@ import org.fossify.messages.extensions.getAddresses
 import org.fossify.messages.extensions.getDefaultKeyboardHeight
 import org.fossify.messages.extensions.getFileSizeFromUri
 import org.fossify.messages.extensions.getMessages
+import org.fossify.messages.extensions.getServiceProviderName
 import org.fossify.messages.extensions.getSmsDraft
 import org.fossify.messages.extensions.getThreadId
 import org.fossify.messages.extensions.getThreadParticipants
@@ -615,7 +616,7 @@ class ThreadActivity : SimpleActivity() {
                 val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
                 val shouldScrollToBottom =
                     currentList.lastOrNull() != latestThreadItems.lastOrNull() &&
-                            lastPosition - lastVisiblePosition == 1
+                        lastPosition - lastVisiblePosition == 1
                 updateMessages(latestThreadItems, if (shouldScrollToBottom) lastPosition else -1)
             }
         }
@@ -1059,28 +1060,39 @@ class ThreadActivity : SimpleActivity() {
     }
 
     private fun setupThreadTitle() {
+        val participant = participants.firstOrNull()
+        val name = participant?.name
+        val number = participant?.phoneNumbers?.firstOrNull()?.normalizedNumber
+        val isSingleContact = participants.size == 1
+
+        // 运营商 / 银行等服务号码：标题直接显示识别出的名称，号码作为副标题
+        // 仅当当前名字是号码本身或识别名称时生效，避免覆盖用户自建联系人
+        val serviceName = if (isSingleContact && !number.isNullOrEmpty()) {
+            getServiceProviderName(number)
+        } else {
+            null
+        }
+        if (serviceName != null && (name == number || name == serviceName)) {
+            binding.threadToolbar.title = serviceName
+            binding.threadToolbar.subtitle = number
+            return
+        }
+
         val title = conversation?.title
-        binding.threadToolbar.title = if (!title.isNullOrEmpty()) {
+        val effectiveTitle = if (!title.isNullOrEmpty()) {
             title
         } else {
             participants.getThreadTitle()
         }
+        binding.threadToolbar.title = effectiveTitle
 
         // 单联系人会话：名字不是号码本身（说明是真实联系人）时，在名字下方用副标题显示号码；
         // 非联系人（name 就是号码）或群聊时不显示副标题
-        val subtitle = if (participants.size == 1) {
-            val participant = participants.first()
-            val name = participant.name
-            val number = participant.phoneNumbers.firstOrNull()?.normalizedNumber
-            if (!name.isNullOrEmpty() && !number.isNullOrEmpty() && name != number) {
-                number
-            } else {
-                null
-            }
+        binding.threadToolbar.subtitle = if (isSingleContact && !name.isNullOrEmpty() && !number.isNullOrEmpty() && name != number) {
+            number
         } else {
             null
         }
-        binding.threadToolbar.subtitle = subtitle
     }
 
     @SuppressLint("MissingPermission")
