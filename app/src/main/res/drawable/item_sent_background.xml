@@ -4,9 +4,9 @@
 
     <corners
         android:bottomLeftRadius="@dimen/big_margin"
-        android:bottomRightRadius="@dimen/small_margin"
+        android:bottomRightRadius="@dimen/big_margin"
         android:topLeftRadius="@dimen/big_margin"
-        android:topRightRadius="@dimen/big_margin" />
+        android:topRightRadius="@dimen/small_margin" />
 
     <solid android:color="@color/color_primary" />
 
