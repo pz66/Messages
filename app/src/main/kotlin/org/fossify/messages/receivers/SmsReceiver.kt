@@ -33,24 +33,44 @@ import org.fossify.messages.helpers.refreshMessages
 import org.fossify.messages.models.Message
 import java.util.regex.Pattern
 
+private val VERIFY_CODE_PATTERN = Pattern.compile("(?<!\\d)(\\d{4,8})(?!\\d)")
+private val KEYWORD_COMBINED_REGEX = Regex(
+    "校验码|验证码|验证密码|动态码|verify|code|verification",
+    RegexOption.IGNORE_CASE
+)
 
 private object CodeExtractor {
     fun extractVerificationCode(text: String): String? {
-        // 内嵌验证码提取工具
-        val keywords = listOf("校验码", "验证码", "验证密码", "动态码", "verify", "code", "verification")
-        val hasKeyword = keywords.any { text.contains(it, ignoreCase = true) }
-        if (!hasKeyword) return null
+        val keywordPositions = KEYWORD_COMBINED_REGEX.findAll(text)
+            .map { it.range.first }
+            .sorted()
+            .toList()
 
-        val pattern = Pattern.compile("(?<!\\d)(\\d{4,8})(?!\\d)")
-        val matcher = pattern.matcher(text)
-        val candidates = mutableListOf<String>()
+        if (keywordPositions.isEmpty()) return null
+
+        val pos = keywordPositions.first()
+        val start = maxOf(0, pos - 60)
+        val end = minOf(text.length, pos + 60)
+        val windowText = text.substring(start, end)
+
+        val matcher = VERIFY_CODE_PATTERN.matcher(windowText)
+        val candidates = mutableListOf<Pair<String, Int>>()
+
         while (matcher.find()) {
-            candidates.add(matcher.group(1))
-        }
-        return candidates.firstOrNull { it.length == 6 } ?: candidates.firstOrNull { it.length == 4 }
-    }
-}
+            val code = matcher.group(1) ?: continue
 
+            val matchStart = matcher.start()
+            candidates.add(Pair(code, matcher.start()))
+        }
+
+        if (candidates.isEmpty()) return null
+
+        // 取窗口内偏移最小，离关键词最近的，不考虑长度
+        val nearest = candidates.minByOrNull { it.second }
+        return nearest?.first
+    }
+
+}
 class SmsReceiver : BroadcastReceiver() {
     
     override fun onReceive(context: Context, intent: Intent) {
