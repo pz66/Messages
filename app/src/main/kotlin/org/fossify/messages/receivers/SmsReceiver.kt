@@ -35,7 +35,7 @@ import java.util.regex.Pattern
 
 private val VERIFY_CODE_PATTERN = Pattern.compile("(?<!\\d)(\\d{4,8})(?!\\d)")
 private val KEYWORD_COMBINED_REGEX = Regex(
-    "校验码|验证码|验证密码|动态码|verify|code|verification",
+    "校验.?码|验证.?码|动态.码|随机.?码|verify|code|verification",
     RegexOption.IGNORE_CASE
 )
 
