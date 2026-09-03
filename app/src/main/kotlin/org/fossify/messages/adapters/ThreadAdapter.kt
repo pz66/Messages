@@ -698,7 +698,7 @@ class ThreadAdapter(
                     hideTimeOnOtherDays = false,
                     showCurrentYear = false
                 )
-                setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize)
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize * 0.8f)
             }
             threadDateTime.setTextColor(textColor)
 
