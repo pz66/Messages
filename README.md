@@ -1,7 +1,18 @@
-# Fossify Messages
-<img alt="Logo" src="graphics/icon.webp" width="120" />
+# Fossify Messages - 中国本地化
 
-<a href='https://play.google.com/store/apps/details?id=org.fossify.messages'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height=80/></a> <a href="https://f-droid.org/packages/org.fossify.messages/"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on-en.svg" alt="Get it on F-Droid" height=80/></a> <a href="https://apt.izzysoft.de/fdroid/index/apk/org.fossify.messages"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height=80/></a>
+### 基于原版做了如下修改
+1. 增加开关，自动复制验证码
+2. 修改通知样式，默认通知可以显示更多内容
+3. 样式调整与修改
+4. 部分号码识别例如 10086 -> 中国移动
+5. 短信链接识别优化
+
+
+### 想要做的，但还没有实现的
+1. 归属地识别
+2. 搜索后，删除短信，返回搜索列表仍然可以吃看到被删除的短信，但是进不去
+3. 主页面一键已读
+
 
 Fossify Messages is your trusted messaging companion, designed to enhance your messaging experience in various ways.
 
