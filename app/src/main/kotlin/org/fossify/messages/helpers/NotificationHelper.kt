@@ -54,7 +54,7 @@ class NotificationHelper(private val context: Context) {
             createChannel(notificationChannelId, context.getString(R.string.channel_received_sms))
         }
 
-        val notificationId = threadId.hashCode()
+        val notificationId = messageId.toInt()
         val contentIntent = Intent(context, ThreadActivity::class.java).apply {
             putExtra(THREAD_ID, threadId)
         }
