@@ -17,7 +17,8 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@color/color_primary"
             app:menu="@menu/menu_thread"
-            app:titleTextAppearance="@style/AppTheme.ActionBar.TitleTextStyle" />
+            app:titleTextAppearance="@style/ThreadToolbarTitle"
+            app:subtitleTextAppearance="@style/ThreadToolbarSubtitle"/>
 
     </org.fossify.commons.views.MyAppBarLayout>
 
